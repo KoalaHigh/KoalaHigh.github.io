@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>酸鹼滴定實驗</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:linear-gradient(160deg,#e8efe8 0%,#d8e8d5 100%);
+  min-height:100vh;display:flex;justify-content:center;
+  padding:14px;font-family:'Noto Sans TC',sans-serif;
+}
+#app{width:100%;max-width:400px}
+.card{background:rgba(255,255,255,0.92);border-radius:18px;padding:14px 16px;box-shadow:0 4px 24px rgba(0,0,0,0.10);margin-bottom:10px}
+.title{font-size:16px;font-weight:600;color:#2a3a2a;margin-bottom:2px}
+.sub{font-size:11px;color:#7a8a7a;line-height:1.5}
+.lab-card{background:rgba(255,255,255,0.92);border-radius:18px;padding:10px 8px 6px;box-shadow:0 4px 24px rgba(0,0,0,0.10);margin-bottom:10px;position:relative;display:flex;justify-content:center}
+.tap-btn{
+  position:absolute;
+  background:linear-gradient(135deg,#3a80c8,#2a6aaa);
+  color:#fff;border:none;border-radius:22px;
+  padding:8px 16px;font-size:12px;font-weight:600;
+  cursor:pointer;box-shadow:0 3px 10px rgba(42,106,170,0.4);
+  right:8px;top:236px;white-space:nowrap;z-index:10;
+  font-family:'Noto Sans TC',sans-serif;
+  transition:transform 0.1s,box-shadow 0.1s;
+  line-height:1.4;
+}
+.tap-btn:active{transform:scale(0.93);box-shadow:0 1px 4px rgba(42,106,170,0.3)}
+.tap-btn:disabled{background:linear-gradient(135deg,#bbb,#999);box-shadow:none;cursor:not-allowed}
+.info-row{display:flex;gap:7px;margin-bottom:10px}
+.ic{flex:1;background:#f2f7f2;border-radius:10px;padding:7px 8px;border:1px solid #e0eae0}
+.ic .l{font-size:10px;color:#7a8a7a}
+.ic .v{font-size:13px;font-weight:600;color:#2a3a2a;margin-top:1px}
+.status{font-size:12px;color:#7a8a7a;text-align:center;min-height:20px;margin-bottom:8px}
+.ep-badge{display:inline-block;padding:3px 14px;border-radius:20px;background:#fde8d8;color:#a0440e;font-size:12px;font-weight:600}
+.ans-sec{background:rgba(255,255,255,0.92);border-radius:14px;padding:12px 14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);margin-bottom:10px}
+.ans-sec label{font-size:12px;color:#7a8a7a;display:block;margin-bottom:7px}
+.ans-row{display:flex;gap:7px}
+.ans-row input{flex:1;padding:8px 10px;border:1.5px solid #c8dac8;border-radius:9px;background:#f8fbf8;color:#2a3a2a;font-size:13px;outline:none;font-family:'Noto Sans TC',sans-serif}
+.ans-row input:focus{border-color:#3a80c8}
+.ans-row button{padding:8px 14px;border:1.5px solid #c8dac8;border-radius:9px;background:#f8fbf8;color:#2a3a2a;font-size:12px;cursor:pointer;font-weight:600;font-family:'Noto Sans TC',sans-serif;transition:background 0.1s}
+.ans-row button:active{background:#e8f0e8}
+.res{margin-top:8px;font-size:12px;padding:8px 10px;border-radius:8px;line-height:1.6}
+.res.ok{background:#eaf3de;color:#3a6e10}
+.res.no{background:#fce8e8;color:#a02020}
+.chart-sec{background:rgba(255,255,255,0.92);border-radius:14px;padding:12px 14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);margin-bottom:10px}
+.chart-sec h3{font-size:13px;font-weight:600;margin-bottom:6px;color:#2a3a2a}
+.chart-wrap{width:100%;height:155px}
+.ep-note{font-size:11px;color:#7a8a7a;margin-top:5px;line-height:1.6}
+.reset-btn{width:100%;padding:10px;border:1.5px solid #c8dac8;border-radius:12px;background:rgba(255,255,255,0.7);color:#7a8a7a;font-size:12px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;transition:background 0.1s}
+.reset-btn:active{background:#e8f0e8}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="card">
+    <div class="title">酸鹼滴定實驗</div>
+    <div class="sub">以1M鹽酸（滴定管）滴定未知濃度NaOH（錐形瓶），加入酚酞指示劑</div>
+  </div>
+
+  <div class="lab-card">
+    <!--
+      Layout plan (viewBox 0 0 300 430):
+      - 鐵架台立柱: x=54~64, y=8~420
+      - 滴定管: x=88~112, y=18~232 (管身200px + 活栓區)
+      - 活栓: y≈232~250, 細管尖端 y≈260~275
+      - 錐形瓶瓶口: y=310 (距細管尖端約35px的自然間隔)
+      - 錐形瓶瓶頸: y=310~360 (50px長頸)
+      - 錐形瓶主體: y=360~415
+      - 底座: y=415~432
+      - 溫度計: 傾斜插入瓶頸，從瓶頸外側進入瓶內
+    -->
+    <svg id="lab" viewBox="0 0 300 435" width="300" height="435" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="buretteGlass" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0%" stop-color="rgba(255,255,255,0.65)"/>
+          <stop offset="25%" stop-color="rgba(255,255,255,0.05)"/>
+          <stop offset="75%" stop-color="rgba(255,255,255,0.05)"/>
+          <stop offset="100%" stop-color="rgba(255,255,255,0.45)"/>
+        </linearGradient>
+        <linearGradient id="hclGrad" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0%" stop-color="rgba(74,144,217,0.6)"/>
+          <stop offset="45%" stop-color="rgba(74,144,217,0.28)"/>
+          <stop offset="100%" stop-color="rgba(74,144,217,0.55)"/>
+        </linearGradient>
+        <linearGradient id="flaskGlass" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0%" stop-color="rgba(255,255,255,0.55)"/>
+          <stop offset="18%" stop-color="rgba(255,255,255,0.0)"/>
+          <stop offset="82%" stop-color="rgba(255,255,255,0.0)"/>
+          <stop offset="100%" stop-color="rgba(255,255,255,0.38)"/>
+        </linearGradient>
+        <linearGradient id="baseGrad" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="#d0d0d0"/>
+          <stop offset="100%" stop-color="#909090"/>
+        </linearGradient>
+        <linearGradient id="poleGrad" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0%" stop-color="#a0a0a0"/>
+          <stop offset="38%" stop-color="#e0e0e0"/>
+          <stop offset="100%" stop-color="#888"/>
+        </linearGradient>
+        <linearGradient id="clampGrad" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="#c0c0c0"/>
+          <stop offset="100%" stop-color="#707070"/>
+        </linearGradient>
+        <linearGradient id="stopcockGrad" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="#5a8fb8"/>
+          <stop offset="100%" stop-color="#2a5a88"/>
+        </linearGradient>
+        <linearGradient id="neckGlass" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0%" stop-color="rgba(255,255,255,0.5)"/>
+          <stop offset="40%" stop-color="rgba(255,255,255,0.0)"/>
+          <stop offset="100%" stop-color="rgba(255,255,255,0.3)"/>
+        </linearGradient>
+
+        <!-- 錐形瓶主體clip -->
+        <clipPath id="fc">
+          <polygon points="84,360 122,360 162,412 46,412"/>
+        </clipPath>
+        <!-- 滴定管液體clip -->
+        <clipPath id="bc">
+          <rect x="89" y="20" width="22" height="205"/>
+        </clipPath>
+        <!-- 溫度計液體clip（傾斜，用旋轉後的矩形） -->
+        <clipPath id="tc">
+          <rect x="128" y="296" width="7" height="80"/>
+        </clipPath>
+        <!-- 瓶頸液體clip -->
+        <clipPath id="nc">
+          <rect x="93" y="310" width="20" height="52"/>
+        </clipPath>
+      </defs>
+
+      <!-- ══════════ 底座 ══════════ -->
+      <rect x="18" y="418" width="220" height="16" rx="4" fill="url(#baseGrad)"/>
+      <rect x="22" y="415" width="212" height="5" rx="2" fill="#c8c8c8"/>
+      <rect x="22" y="416" width="100" height="2" rx="1" fill="rgba(255,255,255,0.5)"/>
+
+      <!-- ══════════ 加熱板 ══════════ -->
+      <rect x="40" y="408" width="124" height="12" rx="3" fill="#b0b8b0"/>
+      <rect x="44" y="409" width="116" height="4" rx="2" fill="#c8d0c8"/>
+      <line x1="52"  y1="411" x2="52"  y2="419" stroke="#909090" stroke-width="0.7"/>
+      <line x1="65"  y1="411" x2="65"  y2="419" stroke="#909090" stroke-width="0.7"/>
+      <line x1="78"  y1="411" x2="78"  y2="419" stroke="#909090" stroke-width="0.7"/>
+      <line x1="91"  y1="411" x2="91"  y2="419" stroke="#909090" stroke-width="0.7"/>
+      <line x1="104" y1="411" x2="104" y2="419" stroke="#909090" stroke-width="0.7"/>
+      <line x1="117" y1="411" x2="117" y2="419" stroke="#909090" stroke-width="0.7"/>
+      <line x1="130" y1="411" x2="130" y2="419" stroke="#909090" stroke-width="0.7"/>
+      <line x1="143" y1="411" x2="143" y2="419" stroke="#909090" stroke-width="0.7"/>
+
+      <!-- ══════════ 立柱 ══════════ -->
+      <rect x="54" y="8" width="10" height="410" rx="3" fill="url(#poleGrad)"/>
+      <rect x="57" y="8" width="2" height="410" rx="1" fill="rgba(255,255,255,0.5)"/>
+
+      <!-- ══════════ 上夾具 ══════════ -->
+      <rect x="42" y="28" width="40" height="10" rx="3" fill="url(#clampGrad)"/>
+      <rect x="60" y="24" width="8" height="18" rx="2" fill="#888" opacity="0.6"/>
+      <rect x="42" y="31" width="18" height="5" rx="2" fill="#aaa"/>
+      <circle cx="44" cy="33" r="3.5" fill="#777"/>
+      <circle cx="44" cy="33" r="1.8" fill="#999"/>
+
+      <!-- ══════════ 下夾具 ══════════ -->
+      <rect x="42" y="155" width="40" height="10" rx="3" fill="url(#clampGrad)"/>
+      <rect x="60" y="151" width="8" height="18" rx="2" fill="#888" opacity="0.6"/>
+      <rect x="42" y="158" width="18" height="5" rx="2" fill="#aaa"/>
+      <circle cx="44" cy="160" r="3.5" fill="#777"/>
+      <circle cx="44" cy="160" r="1.8" fill="#999"/>
+
+      <!-- ══════════ 滴定管 ══════════ -->
+      <!-- 上蓋 -->
+      <rect x="87" y="16" width="26" height="6" rx="2" fill="#c8dae8"/>
+      <!-- 玻璃管外壁 -->
+      <rect x="88" y="18" width="1.5" height="210" rx="0.5" fill="rgba(180,210,230,0.85)"/>
+      <rect x="110.5" y="18" width="1.5" height="210" rx="0.5" fill="rgba(180,210,230,0.65)"/>
+
+      <!-- HCl液體 -->
+      <rect id="hcl-liq" x="89.5" y="20" width="21" height="200" clip-path="url(#bc)" fill="url(#hclGrad)"/>
+      <!-- 液面線 -->
+      <rect id="hcl-surface" x="89.5" y="20" width="21" height="2.5" rx="1" fill="rgba(74,144,217,0.65)"/>
+      <!-- 玻璃高光 -->
+      <rect x="89" y="20" width="5" height="200" fill="url(#buretteGlass)"/>
+      <!-- 管框 -->
+      <rect x="88" y="18" width="24" height="210" rx="1.5" fill="none" stroke="rgba(100,160,200,0.75)" stroke-width="1.2"/>
+
+      <!-- 刻度線 -->
+      <line x1="88" y1="30"  x2="84" y2="30"  stroke="#5a8a9a" stroke-width="0.9"/>
+      <line x1="88" y1="55"  x2="86" y2="55"  stroke="#5a8a9a" stroke-width="0.6"/>
+      <line x1="88" y1="80"  x2="84" y2="80"  stroke="#5a8a9a" stroke-width="0.9"/>
+      <line x1="88" y1="105" x2="86" y2="105" stroke="#5a8a9a" stroke-width="0.6"/>
+      <line x1="88" y1="130" x2="84" y2="130" stroke="#5a8a9a" stroke-width="0.9"/>
+      <line x1="88" y1="155" x2="86" y2="155" stroke="#5a8a9a" stroke-width="0.6"/>
+      <line x1="88" y1="180" x2="84" y2="180" stroke="#5a8a9a" stroke-width="0.9"/>
+      <line x1="88" y1="205" x2="86" y2="205" stroke="#5a8a9a" stroke-width="0.6"/>
+      <line x1="88" y1="225" x2="84" y2="225" stroke="#5a8a9a" stroke-width="0.9"/>
+      <text x="82" y="33"  font-size="7" fill="#5a8a9a" text-anchor="end">0</text>
+      <text x="82" y="83"  font-size="7" fill="#5a8a9a" text-anchor="end">25</text>
+      <text x="82" y="133" font-size="7" fill="#5a8a9a" text-anchor="end">50</text>
+      <text x="82" y="183" font-size="7" fill="#5a8a9a" text-anchor="end">75</text>
+      <text x="82" y="228" font-size="7" fill="#5a8a9a" text-anchor="end">100</text>
+
+      <!-- 鹽酸標籤 -->
+      <text x="132" y="52" font-size="10" fill="#3a5a6a" font-weight="500">鹽酸</text>
+      <line x1="131" y1="50" x2="113" y2="55" stroke="#7aacbc" stroke-width="0.8"/>
+
+      <!-- ══════════ 活栓 ══════════ -->
+      <!-- 管身延伸到活栓 -->
+      <rect x="96" y="228" width="8" height="10" rx="1" fill="#8ab8d8"/>
+      <!-- 活栓本體 -->
+      <rect x="92" y="237" width="16" height="14" rx="3" fill="url(#stopcockGrad)"/>
+      <rect x="93" y="238" width="5" height="2.5" rx="1" fill="rgba(255,255,255,0.3)"/>
+      <!-- 活栓橫桿 -->
+      <rect x="72" y="241" width="56" height="6" rx="3" fill="#1a4a78"/>
+      <circle cx="72" cy="244" r="4.5" fill="#2a5a98"/>
+      <circle cx="128" cy="244" r="4.5" fill="#2a5a98"/>
+      <rect x="76" y="242" width="22" height="2" rx="1" fill="rgba(255,255,255,0.25)"/>
+      <!-- 細管 -->
+      <rect x="96" y="251" width="8" height="20" rx="1" fill="#8ab8d8"/>
+      <rect x="97" y="251" width="2" height="20" fill="rgba(255,255,255,0.4)"/>
+      <!-- 細管錐形尖端 -->
+      <polygon points="96,271 104,271 103,283 97,283" fill="#8ab8d8"/>
+      <polygon points="97,282 103,282 102,290 98,290" fill="#7aaac8"/>
+      <rect x="98" y="252" width="1.5" height="18" fill="rgba(255,255,255,0.35)"/>
+
+      <!-- 水滴（從尖端落下，落入瓶口距離35px） -->
+      <ellipse id="drop" cx="100" cy="292" rx="3" ry="4" fill="rgba(74,144,217,0.85)" opacity="0"/>
+
+      <!-- ══════════ 錐形瓶 ══════════ -->
+      <!-- 瓶口環（y=308, 距細管尖端y=290有約18px空隙） -->
+      <rect x="91" y="306" width="24" height="5" rx="2.5" fill="rgba(150,200,225,0.75)" stroke="rgba(100,160,200,0.6)" stroke-width="0.8"/>
+
+      <!-- 瓶頸（長頸：y=310~362, 50px高，寬約18px） -->
+      <!-- 瓶頸左壁 -->
+      <line x1="93" y1="310" x2="91" y2="362" stroke="rgba(100,165,205,0.75)" stroke-width="1.5"/>
+      <!-- 瓶頸右壁 -->
+      <line x1="113" y1="310" x2="115" y2="362" stroke="rgba(100,165,205,0.65)" stroke-width="1.5"/>
+      <!-- 瓶頸玻璃填色 -->
+      <polygon points="93,310 113,310 115,362 91,362" fill="rgba(210,235,245,0.18)"/>
+      <!-- 瓶頸高光 -->
+      <polygon points="93,310 97,310 95,362 91,362" fill="url(#neckGlass)"/>
+
+      <!-- 肩部（頸到體的過渡） -->
+      <path d="M91,362 Q60,375 46,412" fill="none" stroke="rgba(100,165,205,0.75)" stroke-width="1.5"/>
+      <path d="M115,362 Q146,375 162,412" fill="none" stroke="rgba(100,165,205,0.65)" stroke-width="1.5"/>
+
+      <!-- 主體液體（在玻璃下層） -->
+      <rect id="flask-liq" x="42" y="385" width="124" height="29"
+            clip-path="url(#fc)" fill="rgba(200,200,200,0.25)"/>
+      <!-- 液面高光 -->
+      <rect id="flask-surface" x="46" y="385" width="112" height="2.5"
+            clip-path="url(#fc)" rx="1" fill="rgba(255,255,255,0.4)"/>
+
+      <!-- 玻璃主體輪廓（在液體上層） -->
+      <path d="M91,362 Q60,375 46,412 L162,412 Q146,375 115,362 Z"
+            fill="rgba(210,235,245,0.12)"
+            stroke="rgba(100,165,205,0.75)" stroke-width="1.5"/>
+      <!-- 底部橢圓弧 -->
+      <ellipse cx="104" cy="412" rx="58" ry="4" fill="rgba(100,160,200,0.2)"/>
+
+      <!-- 玻璃高光（錐形瓶左側） -->
+      <path d="M91,362 Q62,375 48,410 Q52,380 66,370 Z" fill="rgba(255,255,255,0.18)"/>
+
+      <!-- NaOH初始50ml標記線 -->
+      <line id="naoh-mark" x1="50" y1="385" x2="76" y2="385" stroke="#d47820" stroke-width="1.4" stroke-dasharray="4,2"/>
+      <text x="43" y="383" font-size="9" fill="#d47820" text-anchor="middle">50ml</text>
+
+      <!-- 氫氧化鈉標籤 -->
+      <text x="190" y="390" font-size="10" fill="#3a5a6a" font-weight="500">氫氧化</text>
+      <text x="190" y="402" font-size="10" fill="#3a5a6a" font-weight="500">鈉溶液</text>
+      <line x1="188" y1="395" x2="168" y2="400" stroke="#7aacbc" stroke-width="0.8"/>
+
+      <!-- ══════════ 溫度計（從瓶口插入，約10°傾角，頂端露出瓶口上方） ══════════ -->
+      <!--
+        設計概念：
+        - 溫度計頂端在 y≈258（瓶口 y=306 上方約48px露出）
+        - 穿過瓶口環進入瓶頸，球泡在瓶體內液體中 y≈400
+        - 整支管長約145px，pivot (118, 258)，旋轉 10°
+        - x稍偏右，不擋住滴定管水滴落下的路線
+      -->
+      <g transform="rotate(10, 118, 258)">
+        <!-- 頂端橡皮塞（露出在瓶口上方） -->
+        <rect x="114" y="255" width="8" height="10" rx="2"
+              fill="#8a6a4a" stroke="#6a4a2a" stroke-width="0.7"/>
+        <!-- 玻璃管主體（從頂端往下，穿過瓶口進入瓶頸和瓶體） -->
+        <rect x="115.5" y="264" width="6" height="138" rx="2.5"
+              fill="rgba(210,235,245,0.55)" stroke="rgba(100,160,200,0.7)" stroke-width="1"/>
+        <!-- 高光 -->
+        <rect x="116.5" y="265" width="2" height="132" rx="1" fill="rgba(255,255,255,0.6)"/>
+        <!-- 紅色液柱（從球泡往上，初始約18px） -->
+        <rect id="therm-fill" x="117" y="377" width="3" height="18" rx="1"
+              fill="rgba(210,40,40,0.8)"/>
+        <!-- 底部球泡（在瓶體下半段液體中） -->
+        <ellipse cx="118.5" cy="397" rx="7" ry="7"
+                 fill="rgba(210,40,40,0.78)" stroke="rgba(100,160,200,0.65)" stroke-width="0.9"/>
+        <!-- 球泡高光 -->
+        <ellipse cx="116.5" cy="395" rx="2" ry="2" fill="rgba(255,255,255,0.38)"/>
+        <!-- 刻度線（露出瓶口以上的部分，方便讀數） -->
+        <line x1="121.5" y1="272" x2="125.5" y2="272" stroke="#7aacbc" stroke-width="0.8"/>
+        <line x1="121.5" y1="282" x2="125.5" y2="282" stroke="#7aacbc" stroke-width="0.8"/>
+        <line x1="121.5" y1="292" x2="125.5" y2="292" stroke="#7aacbc" stroke-width="0.8"/>
+        <line x1="121.5" y1="302" x2="125.5" y2="302" stroke="#7aacbc" stroke-width="0.8"/>
+        <!-- 瓶頸內刻度 -->
+        <line x1="121.5" y1="318" x2="124.5" y2="318" stroke="#7aacbc" stroke-width="0.6"/>
+        <line x1="121.5" y1="332" x2="124.5" y2="332" stroke="#7aacbc" stroke-width="0.6"/>
+        <line x1="121.5" y1="346" x2="124.5" y2="346" stroke="#7aacbc" stroke-width="0.6"/>
+        <line x1="121.5" y1="360" x2="124.5" y2="360" stroke="#7aacbc" stroke-width="0.6"/>
+      </g>
+
+      <!-- 溫度標籤（固定不旋轉，在溫度計頂端右側） -->
+      <text id="temp-label" x="148" y="270" font-size="10" fill="#c03030" font-weight="500">25.0°C</text>
+      <text x="148" y="282" font-size="9" fill="#7a8a7a">溫度計</text>
+      <line x1="147" y1="273" x2="134" y2="271" stroke="#d08080" stroke-width="0.7"/>
+
+    </svg>
+    <button class="tap-btn" id="drop-btn" onclick="doDrop()">▼ 開啟活栓<br>滴入 1ml</button>
+  </div>
+
+  <div class="info-row">
+    <div class="ic"><div class="l">已滴入 HCl</div><div class="v" id="hcl-v">0 ml</div></div>
+    <div class="ic"><div class="l">滴定管剩餘</div><div class="v" id="bur-left">100 ml</div></div>
+    <div class="ic"><div class="l">瓶內溫度</div><div class="v" id="temp-info">25.0°C</div></div>
+  </div>
+  <div class="status" id="status">尚未開始滴定</div>
+
+  <div class="ans-sec" id="ans-sec" style="display:none">
+    <label>終點達成！請計算並填入 NaOH 濃度（M）：</label>
+    <div class="ans-row">
+      <input type="number" id="ans" step="0.01" min="0" placeholder="例：0.25"/>
+      <button onclick="check()">確認</button>
+    </div>
+    <div id="res-msg"></div>
+  </div>
+
+  <div class="chart-sec" id="chart-sec" style="display:none">
+    <h3>pH 隨滴入體積變化圖</h3>
+    <div class="chart-wrap"><canvas id="ph-cv"></canvas></div>
+    <p class="ep-note" id="ep-note"></p>
+  </div>
+
+  <button class="reset-btn" onclick="reset()">↺ 重新開始（換一個濃度）</button>
+</div>
+
+<script>
+const CONCS=[0.1,0.4,0.5,0.6,0.8];
+const DH=55800,C_WATER=4.18;
+let naohConc,hclAdded,naohVol,ended,phData,volData,chart,busy,temperature;
+
+function calcPH(hv,nv,nc,hc){
+  const mH=hv*hc,mN=nv*nc,tot=hv+nv;
+  if(tot===0)return 13;
+  const d=mN-mH;
+  if(Math.abs(d)<0.0001)return 7;
+  if(d>0)return Math.min(14,14+Math.log10(d/tot));
+  return Math.max(0,-Math.log10(-d/tot));
+}
+
+function calcTemp(){
+  const molHCl=hclAdded/1000,molNaOH=naohVol/1000*naohConc;
+  const molNeutralized=Math.min(molHCl,molNaOH);
+  const Q=molNeutralized*DH;
+  const mass=naohVol+hclAdded;
+  return +(25+Q/(mass*C_WATER)).toFixed(2);
+}
+
+function phColor(ph){
+  if(ph>=9.8)return['rgba(195,45,105,0.65)','rgba(220,60,130,0.4)'];
+  if(ph>=8.2){
+    const t=(ph-8.2)/1.6;
+    const r=Math.round(240-t*45),g=Math.round(200-t*155),b=Math.round(220-t*115);
+    return[`rgba(${r},${g},${b},0.55)`,`rgba(${r},${g},${b},0.3)`];
+  }
+  return['rgba(185,215,230,0.25)','rgba(255,255,255,0.3)'];
+}
+
+function updateHClLiquid(){
+  const fullH=200,newH=Math.max(0,fullH*(1-hclAdded/100)),newY=20+(fullH-newH);
+  document.getElementById('hcl-liq').setAttribute('y',newY);
+  document.getElementById('hcl-liq').setAttribute('height',newH);
+  document.getElementById('hcl-surface').setAttribute('y',newY);
+}
+
+function updateFlask(ph){
+  const [col,surf]=phColor(ph);
+  // 液面固定不變，只更新顏色
+  document.getElementById('flask-liq').setAttribute('fill',col);
+  document.getElementById('flask-surface').setAttribute('fill',surf);
+}
+
+function updateThermometer(temp){
+  // 液柱從球泡(y=395)往上，初始18px，最多56px（對應~15°C升幅）
+  const dT=Math.min(temp-25,15);
+  const fillH=18+dT*2.6;
+  const topY=395-fillH;
+  document.getElementById('therm-fill').setAttribute('y',topY);
+  document.getElementById('therm-fill').setAttribute('height',fillH);
+  document.getElementById('temp-label').textContent=temp.toFixed(1)+'°C';
+  document.getElementById('temp-info').textContent=temp.toFixed(1)+'°C';
+}
+
+function animateDrop(cb){
+  const el=document.getElementById('drop');
+  let cy=292,op=1;
+  el.setAttribute('cy',cy);el.setAttribute('opacity',op);
+  const iv=setInterval(()=>{
+    cy+=5;op-=0.12;
+    el.setAttribute('cy',cy);el.setAttribute('opacity',Math.max(0,op));
+    if(cy>315){clearInterval(iv);el.setAttribute('opacity',0);cb();}
+  },16);
+}
+
+function doDrop(){
+  if(ended||busy)return;
+  busy=true;
+  document.getElementById('drop-btn').disabled=true;
+  animateDrop(()=>{
+    hclAdded+=1;
+    const ph=calcPH(hclAdded/1000,naohVol/1000,naohConc,1);
+    temperature=calcTemp();
+    phData.push(+ph.toFixed(2));volData.push(hclAdded);
+    updateHClLiquid();updateFlask(ph);updateThermometer(temperature);
+    document.getElementById('hcl-v').textContent=hclAdded+' ml';
+    document.getElementById('bur-left').textContent=(100-hclAdded)+' ml';
+    const st=document.getElementById('status');
+    if(ph<=8.2&&!ended){
+      ended=true;
+      st.innerHTML='<span class="ep-badge">指示劑變色！滴定終點達成</span>';
+      document.getElementById('ans-sec').style.display='block';
+      document.getElementById('chart-sec').style.display='block';
+      showChart();
+    } else {
+      if(ph>9.8)st.textContent='溶液呈強鹼性（深紅色）';
+      else if(ph>8.2)st.textContent='pH ≈ '+ph.toFixed(1)+'，顏色漸淡...';
+      else st.textContent='溶液接近中性';
+      busy=false;
+      document.getElementById('drop-btn').disabled=false;
+    }
+  });
+}
+
+function showChart(){
+  const cv=document.getElementById('ph-cv');
+  if(chart)chart.destroy();
+  chart=new Chart(cv,{
+    type:'line',
+    data:{labels:volData,datasets:[{data:phData,borderColor:'#3a80c8',borderWidth:2,pointRadius:0,tension:0.3,fill:false}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{enabled:false}},
+      scales:{
+        x:{title:{display:true,text:'HCl滴入量 (ml)',font:{size:10}},ticks:{font:{size:9}}},
+        y:{title:{display:true,text:'pH',font:{size:10}},min:0,max:14,ticks:{font:{size:9}}}
+      },animation:{duration:500}
+    }
+  });
+  document.getElementById('ep-note').textContent=
+    '終點：滴入 '+hclAdded+' ml，pH ≈ '+phData[phData.length-1]+'，溫度 '+temperature.toFixed(1)+'°C（ΔH ≈ -55.8 kJ/mol）';
+}
+
+function check(){
+  const v=parseFloat(document.getElementById('ans').value);
+  const m=document.getElementById('res-msg');
+  if(isNaN(v)){m.className='res no';m.textContent='請輸入數字';return;}
+  const ans=+naohConc.toFixed(4);
+  if(Math.abs(v-ans)<0.02){
+    m.className='res ok';
+    m.textContent='✓ 正確！NaOH = '+ans+' M（C₁V₁=C₂V₂ → 1×'+hclAdded+' = ?×'+naohVol+'）';
+  } else {
+    m.className='res no';
+    m.textContent='✗ 不對。提示：1M × '+hclAdded+' ml = ? × '+naohVol+' ml';
+  }
+}
+
+function reset(){
+  naohConc=CONCS[Math.floor(Math.random()*4)];
+  naohVol=50;hclAdded=0;ended=false;busy=false;
+  phData=[];volData=[];temperature=25.0;
+  document.getElementById('hcl-v').textContent='0 ml';
+  document.getElementById('bur-left').textContent='100 ml';
+  document.getElementById('status').textContent='尚未開始滴定';
+  document.getElementById('drop-btn').disabled=false;
+  document.getElementById('ans-sec').style.display='none';
+  document.getElementById('chart-sec').style.display='none';
+  document.getElementById('ans').value='';
+  document.getElementById('res-msg').textContent='';
+  document.getElementById('ep-note').textContent='';
+  if(chart){chart.destroy();chart=null;}
+  updateHClLiquid();
+  updateFlask(calcPH(0,naohVol/1000,naohConc,1));
+  updateThermometer(25.0);
+}
+
+reset();
+</script>
+</body>
+</html>
