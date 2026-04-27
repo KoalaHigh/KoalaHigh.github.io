@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Code 產生器</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f3ef;
+    --surface: #ffffff;
+    --ink: #1a1814;
+    --ink-2: #6b6660;
+    --ink-3: #b0aba6;
+    --accent: #2a5c45;
+    --accent-light: #e8f0eb;
+    --border: #e2ddd8;
+    --danger: #c0392b;
+    --radius: 12px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+
+  html, body {
+    min-height: 100%;
+    background: var(--bg);
+    font-family: 'Noto Sans TC', sans-serif;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 3rem 1rem 4rem;
+    min-height: 100vh;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .logo-mark {
+    width: 52px;
+    height: 52px;
+    background: var(--accent);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+  }
+
+  .logo-mark svg {
+    width: 28px;
+    height: 28px;
+    fill: none;
+    stroke: #fff;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  h1 {
+    font-size: clamp(1.5rem, 5vw, 2rem);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+
+  .tagline {
+    font-size: 0.9rem;
+    color: var(--ink-2);
+    margin-top: 6px;
+    font-weight: 300;
+  }
+
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    width: 100%;
+    max-width: 480px;
+    padding: 2rem;
+    animation: fadeUp 0.5s 0.1s ease both;
+  }
+
+  .field-label {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--ink-2);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .input-wrap {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    height: 44px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0 14px;
+    font-size: 0.95rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--ink);
+    background: var(--bg);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  input[type="text"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(42,92,69,0.12);
+    background: #fff;
+  }
+
+  input[type="text"]::placeholder {
+    color: var(--ink-3);
+    font-family: 'Noto Sans TC', sans-serif;
+  }
+
+  .btn-gen {
+    height: 44px;
+    padding: 0 20px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, transform 0.1s;
+  }
+
+  .btn-gen:hover { background: #1f4533; }
+  .btn-gen:active { transform: scale(0.97); }
+
+  .err {
+    font-size: 0.8rem;
+    color: var(--danger);
+    min-height: 18px;
+    margin-bottom: 1rem;
+  }
+
+  .opts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 1.5rem;
+  }
+
+  .opt-group { display: flex; flex-direction: column; gap: 6px; }
+
+  select {
+    height: 38px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 0.88rem;
+    font-family: 'Noto Sans TC', sans-serif;
+    padding: 0 10px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none' stroke='%236b6660' stroke-width='1.5'%3E%3Cpath d='M1 1l4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+
+  select:focus { border-color: var(--accent); }
+
+  .qr-panel {
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 2rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+    min-height: 200px;
+    justify-content: center;
+    background: var(--bg);
+    transition: background 0.3s;
+  }
+
+  .qr-panel.has-qr {
+    background: #fff;
+    border-style: solid;
+    border-color: var(--border);
+  }
+
+  #qr-box canvas, #qr-box img {
+    border-radius: 6px;
+    display: block;
+  }
+
+  .placeholder-icon {
+    opacity: 0.3;
+  }
+
+  .placeholder-text {
+    font-size: 0.85rem;
+    color: var(--ink-3);
+    text-align: center;
+    line-height: 1.7;
+  }
+
+  .url-display {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--ink-2);
+    background: var(--accent-light);
+    padding: 6px 12px;
+    border-radius: 100px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .btn-dl {
+    display: none;
+    height: 40px;
+    padding: 0 24px;
+    background: transparent;
+    color: var(--accent);
+    border: 1.5px solid var(--accent);
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, transform 0.1s;
+  }
+
+  .btn-dl:hover { background: var(--accent); color: #fff; }
+  .btn-dl:active { transform: scale(0.97); }
+
+  footer {
+    margin-top: 2rem;
+    font-size: 0.78rem;
+    color: var(--ink-3);
+    text-align: center;
+    animation: fadeUp 0.5s 0.2s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 420px) {
+    body { padding: 2rem 0.75rem 3rem; }
+    .card { padding: 1.5rem; }
+    .opts { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-mark">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/></svg>
+  </div>
+  <h1>QR Code 產生器</h1>
+  <p class="tagline">輸入網址或任何文字，即時產生可下載的 QR Code</p>
+</header>
+
+<div class="card">
+  <label class="field-label" for="url-input">網址或文字內容</label>
+  <div class="input-wrap">
+    <input type="text" id="url-input" placeholder="https://example.com" autocomplete="off" autocorrect="off" spellcheck="false" />
+    <button class="btn-gen" onclick="generate()">產生</button>
+  </div>
+  <div class="err" id="err-msg"></div>
+
+  <div class="opts">
+    <div class="opt-group">
+      <label class="field-label" for="size-sel">尺寸</label>
+      <select id="size-sel">
+        <option value="128">128 px（小）</option>
+        <option value="200" selected>200 px（中）</option>
+        <option value="300">300 px（大）</option>
+        <option value="400">400 px（超大）</option>
+      </select>
+    </div>
+    <div class="opt-group">
+      <label class="field-label" for="ec-sel">錯誤修正等級</label>
+      <select id="ec-sel">
+        <option value="L">L（7%）</option>
+        <option value="M" selected>M（15%）</option>
+        <option value="Q">Q（25%）</option>
+        <option value="H">H（30%，最耐損）</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="qr-panel" id="qr-panel">
+    <svg class="placeholder-icon" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#6b6660" stroke-width="1.2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/></svg>
+    <p class="placeholder-text" id="placeholder-text">在上方輸入網址，<br>按「產生」即可看到 QR Code</p>
+    <div id="qr-box"></div>
+    <div class="url-display" id="url-display" style="display:none"></div>
+    <button class="btn-dl" id="dl-btn" onclick="download()">⬇ 下載 PNG</button>
+  </div>
+</div>
+
+<footer>純前端運作，內容不會上傳至任何伺服器</footer>
+
+<script>
+let lastVal = '';
+
+function generate() {
+  const val = document.getElementById('url-input').value.trim();
+  const err = document.getElementById('err-msg');
+
+  if (!val) { err.textContent = '請輸入網址或文字內容'; return; }
+  if (val === lastVal) return;
+  err.textContent = '';
+  lastVal = val;
+
+  const size = parseInt(document.getElementById('size-sel').value);
+  const ec = document.getElementById('ec-sel').value;
+  const ecMap = { L: QRCode.CorrectLevel.L, M: QRCode.CorrectLevel.M, Q: QRCode.CorrectLevel.Q, H: QRCode.CorrectLevel.H };
+
+  const box = document.getElementById('qr-box');
+  box.innerHTML = '';
+
+  try {
+    new QRCode(box, { text: val, width: size, height: size, correctLevel: ecMap[ec] });
+
+    const panel = document.getElementById('qr-panel');
+    panel.classList.add('has-qr');
+    document.getElementById('placeholder-text').style.display = 'none';
+    document.querySelector('.placeholder-icon').style.display = 'none';
+
+    const disp = document.getElementById('url-display');
+    disp.textContent = val.length > 48 ? val.slice(0, 45) + '…' : val;
+    disp.style.display = 'block';
+
+    document.getElementById('dl-btn').style.display = 'inline-block';
+  } catch(e) {
+    err.textContent = '內容過長，請縮短文字或降低錯誤修正等級';
+    lastVal = '';
+  }
+}
+
+function download() {
+  const canvas = document.querySelector('#qr-box canvas');
+  const img = document.querySelector('#qr-box img');
+  const a = document.createElement('a');
+  const name = 'qrcode-' + Date.now() + '.png';
+  if (canvas) {
+    a.href = canvas.toDataURL('image/png');
+  } else if (img) {
+    a.href = img.src;
+  } else return;
+  a.download = name;
+  a.click();
+}
+
+document.getElementById('url-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { lastVal = ''; generate(); }
+});
+
+document.getElementById('size-sel').addEventListener('change', () => { lastVal = ''; generate(); });
+document.getElementById('ec-sel').addEventListener('change', () => { lastVal = ''; generate(); });
+</script>
+
+</body>
+</html>
